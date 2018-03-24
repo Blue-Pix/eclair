@@ -1,3 +1,7 @@
+# ※ WIP
+- blank rails app
+- MySQL5.6 5.7 password policy compatibility
+
 # What is eclair
 Infra automation for rails, nodejs, mysql, redis, elasticsearch on vagrant using Ansible
 
