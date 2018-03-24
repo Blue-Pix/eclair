@@ -1,6 +1,22 @@
 # eclair
 Infra automation for rails, nodejs, mysql, redis, elasticsearch on vagrant using Ansible
 
+# Default Version
+
+- Ruby 2.4.2
+- MySQL 5.7
+- Redis stable
+- Elasticsearch 5.6
+- Node.js 8.1.2
+
+To change version, please edit `roles/*/vars/main.yml`.
+But, if with other version works, is not guaranteed.
+e.g. may some properties in config file are missing, vice versa.
+
+Regarding OS, more sensitive.
+On default using CentOS7.2.
+e.g. if you prefer to use Ubuntu, you have to replace `yum` with `apt-get`
+
 # How to use
 
 ```
