@@ -1,0 +1,106 @@
+- name: check if source exists
+  stat:
+    path: /tmp/redis-{{ redis_version }}
+  register: redis_source_check
+
+- name: download and unarchive source
+  unarchive:
+    src: http://download.redis.io/releases/redis-{{ redis_version }}.tar.gz
+    dest: /tmp
+    copy: no
+  when: not redis_source_check.stat.exists
+
+- name: make and install
+  make:
+    chdir: /tmp/redis-{{ redis_version }}
+    target: install
+  when: not redis_source_check.stat.exists
+
+- name: check if binary source located
+  stat:
+    path: /usr/local/bin/redis-server
+  register: redis_server_bin_check
+
+- name: move binary source
+  shell: |
+    cp redis-server redis-cli redis-sentinel redis-benchmark redis-check-rdb redis-check-aof /usr/local/bin
+  args:
+    chdir: /tmp/redis-{{ redis_version }}/src
+  when: not redis_server_bin_check.stat.exists
+
+- name: check if config file located
+  stat:
+    path: /etc/redis/{{ redis_port }}.conf
+  register: redis_conf_check
+
+- name: make config directory
+  file: 
+    path: /etc/redis
+    state: directory
+    mode: 0755
+
+- name: move config file
+  shell: |
+    mv redis.conf /etc/redis/{{ redis_port }}.conf
+  args:
+    chdir: /tmp/redis-{{ redis_version }}
+  when: not redis_conf_check.stat.exists
+
+- name: edit config file
+  lineinfile:
+    path: /etc/redis/{{ redis_port }}.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  with_items:
+    - {regexp: "^dir ", line: "dir {{ redis_data_dir }}"}
+    - {regexp: "^logfile ", line: "logfile {{ redis_log_dir }}/{{ redis_port }}.conf"}
+    - {regexp: "^loglevel ", line: "loglevel {{ redis_log_level }}"}
+    - {regexp: "^daemonize ", line: "daemonize yes"}
+    - {regexp: "^port ", line: "port {{ redis_port }}"}
+    - {regexp: "^supervised ", line: "supervised systemd"}
+
+- name: create usergroup for redis daemon
+  group:
+    name: redis
+    state: present
+    system: yes
+
+- name: create user for redis daemon
+  user:
+    name: redis
+    group: redis
+    state: present
+    createhome: no
+    system: yes
+
+- name: make data and log directory
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: redis
+    group: redis
+    mode: 0755
+  with_items:
+    - "{{ redis_data_dir }}"
+    - "{{ redis_log_dir }}"
+
+- name: check if systemd registered
+  stat:
+    path: /etc/systemd/system/redis.service
+  register: redis_service_check
+
+- name: register systemd
+  template:
+    src: redis.service.j2
+    dest: /etc/systemd/system/redis.service
+    owner: root
+    group: root
+    mode: 0755
+  when: not redis_service_check.stat.exists
+
+- name: reload daemon
+  shell: |
+    systemctl daemon-reload
+  notify: start redis server
+  when: not redis_service_check.stat.exists

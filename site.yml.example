@@ -1,0 +1,8 @@
+- hosts: eclair
+  roles:
+    - init
+    - mysql
+    - ruby
+    - nodejs
+    - redis
+    - elasticsearch

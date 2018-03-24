@@ -1,0 +1,69 @@
+- name: install JDK-1.8.0
+  yum:
+    name: "{{ item }}"
+    state: present
+    enablerepo: "*debug*"
+  with_items:
+    - java-1.8.0-openjdk-devel
+    - java-1.8.0-openjdk-debuginfo
+
+- name: locate yum repository info 
+  template:
+    src: elasticsearch.repo
+    dest: /etc/yum.repos.d/elasticsearch.repo
+    mode: 0644
+
+- name: install via yum 
+  yum:
+    name: elasticsearch-{{ elasticsearch_version }}
+    state: present
+
+- name: check if kuromoji plugin installed
+  stat:
+    path: /usr/share/elasticsearch/plugins/analysis-kuromoji
+  register: kuromoji_check
+
+- name: install kuromoji plugin
+  shell: |
+    ./elasticsearch-plugin install analysis-kuromoji
+  args:
+    chdir: /usr/share/elasticsearch/bin/
+  when: not kuromoji_check.stat.exists
+
+- name: edit config file elasticsearch.yml
+  lineinfile:
+    path: /etc/elasticsearch/elasticsearch.yml
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - { regexp: "^http.port: ", line: "http.port: {{ elasticsearch_port }}" }
+    - { regexp: "^bootstrap.memory_lock: ", line: "bootstrap.memory_lock: true" }
+    - { regexp: "^path.logs: ", line: "path.logs: /var/log/elasticsearch" }
+    - { regexp: "^network.host: ", line: "network.host: 127.0.0.1" }
+
+- name: unlock memory limit for elasticsearch user
+  lineinfile:
+    path: /etc/security/limits.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - { regexp: "^elasticsearch soft memlock unlimited", line: "elasticsearch soft memlock unlimited" }
+    - { regexp: "^elasticsearch hard memlock unlimited", line: "elasticsearch hard memlock unlimited" }
+
+- name: add LimitMEMLOCK option for elasticsearch service
+  lineinfile:
+    path: /usr/lib/systemd/system/elasticsearch.service
+    regexp: "^LimitMEMLOCK"
+    line: "LimitMEMLOCK = infinity"
+
+# default 2g is sometimes too large for low spec server
+# if too large, cannot start elasticsearch.service
+- name: edit config file jvm.options
+  lineinfile:
+    path: /etc/elasticsearch/jvm.options
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - { regexp: "^-Xms", line: "-Xms{{ jvm_xms }}" }
+    - { regexp: "^-Xmx", line: "-Xmx{{ jvm_xmx }}" }
+  notify: start elasticsearch service

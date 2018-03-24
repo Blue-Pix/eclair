@@ -1,0 +1,73 @@
+- name: yum install git
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - git
+    - nss
+    - nss-util
+    - nspr
+    - curl
+
+- name: install rbenv
+  git:
+    repo: https://github.com/rbenv/rbenv.git
+    dest: ~/.rbenv
+  become_user: "{{ working_user }}"
+
+- name: set global rbenv path
+  template:
+    src: 001_rbenv.sh
+    dest: ~/.bash.d/001_rbenv.sh
+    mode: 0755
+  become_user: "{{ working_user }}"
+
+- name: install dependencies for ruby build
+  yum: 
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - gcc
+    - openssl-devel
+    - libyaml-devel
+    - libffi-devel
+    - readline-devel
+    - zlib-devel
+    - gdbm-devel
+    - ncurses-devel
+
+- name: install ruby-build
+  git:
+    repo: https://github.com/sstephenson/ruby-build.git
+    dest: ~/.rbenv/plugins/ruby-build
+  become_user: "{{ working_user }}"
+
+- name: check current ruby version
+  shell: |
+    /bin/bash -lc "ruby -v | grep -oP '^ruby \d{1}.\d{1}.\d{1}' | cut -f 2 -d ' '"
+  register: current_ruby_version
+  become_user: "{{ working_user }}"
+  changed_when: False
+
+- name: shell relogin
+  shell: |
+    /bin/bash -lc  "source ~/.bash_profile"
+  become_user: "{{ working_user }}"
+
+- name: install ruby
+  shell: |
+    /bin/bash -lc "rbenv install {{ ruby_version }}"
+    /bin/bash -lc "gem install bundler"
+    /bin/bash -lc "rbenv rehash"
+    /bin/bash -lc "rbenv local {{ ruby_version }}"
+  args:
+    chdir: "{{ app_dir }}"
+  become_user: "{{ working_user }}"
+  when: current_ruby_version.stdout != ruby_version
+  
+- name: bundle install
+  shell: |
+    /bin/bash -lc "bundle install"
+  args:
+    chdir: "{{ app_dir }}"
+  become_user: "{{ working_user }}"

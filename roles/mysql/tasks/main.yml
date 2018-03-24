@@ -1,0 +1,136 @@
+# mariadbがインストールされているか確認（初回チェック）
+- name: check if mariadb installed
+  yum:
+    list=mariadb-libs
+  register: pkg
+
+# プリインストールされているmariadbを削除（初回のみ）
+- name: remove pre-installed mariadb
+  yum:
+    name: mariadb-libs
+    state: absent
+
+# mariadbを削除した時のみ、関連するファイルも削除（初回のみ）
+- name: remove pre-installed mariadb conf 
+  file:
+    path: /var/lib/mysql
+    state: absent
+  when: pkg.results[0].yumstate == 'installed'
+
+# MySQLのリポジトリをインストール
+- name: "install MySQL{{ mysql_version }} yum repository"
+  yum: 
+    name: "{{ mysql_repo_url }}"
+    state: present
+
+- name: "MySQL5.6 specific process"
+  yum:
+    name: yum-utils
+    state: present
+  when: mysql_version == 5.6
+
+- name: "MySQL5.6 specific process"
+  shell: |
+    yum-config-manager --disable mysql57-community
+    yum-config-manager --enable mysql56-community
+  when: mysql_version == 5.6
+
+# MySQLをモジュール群もまとめてインストール
+- name: "install MySQL{{ mysql_version }}"
+  yum:
+    name: "{{ item }}"
+    enablerepo: "{{ mysql_repo_name }}"
+    state: present
+  with_items:
+    - mysql
+    - mysql-devel
+    - mysql-server
+    - mysql-utilities
+    - MySQL-python
+
+# 起動 & 自動起動の設定
+- name: start and enable MySQL
+  service:
+    name: mysqld
+    state: started
+    enabled: yes
+
+# rootユーザーのログイン情報のファイルが配置されているか確認（初回チェック）
+- name: check if /root/.my.cnf exists
+  stat:
+    path: /root/.my.cnf
+  register: mysql_root_conf_file
+
+# rootユーザーのデフォルトパスワードを確認（初回のみ）
+- name: get default MySQL root password
+  shell: |
+    less /var/log/mysqld.log | grep password | awk '{ print $NF }'
+  register: mysql_default_password
+  when: not mysql_root_conf_file.stat.exists
+
+# パスワードポリシーの変更（初回のみ）
+- name: change password validation to the easy way
+  shell: |
+    mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "SET GLOBAL validate_password_length=4;"
+    mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "SET GLOBAL validate_password_policy='{{ mysql_password_policy }}';"
+    mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'tmppassw0rd';"
+    mysql -u root -p'tmppassw0rd' --connect-expired-password -e "uninstall plugin validate_password;"
+  when: not mysql_root_conf_file.stat.exists
+
+# rootユーザーのパスワード変更（初回のみ）
+- name: change root user password
+  shell: |
+    mysql -u root -p'tmppassw0rd' --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ mysql_root_new_password }}';"
+  when: not mysql_root_conf_file.stat.exists
+# mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ mysql_root_new_password }}';"
+
+# rootユーザーのMySQLログイン情報の設定ファイルを配置
+- name: deploy root user .my.cnf
+  template:
+    src: root.my.cnf.j2
+    dest: "/root/.my.cnf"
+    owner: root
+    group: root
+    mode: 0600
+
+# my.cnfのバックアップが存在するか確認（初回チェック）
+- name: check if my.cnf.bk exists
+  stat:
+    path: "/etc/my.cnf.bk"
+  register: mysql_conf_backup_file
+
+# デフォルトのmy.cnfのバックアップを作成（初回のみ）
+- name: backup default my.cnf
+  shell: |
+    mv /etc/my.cnf /etc/my.cnf.bk
+  when: not mysql_conf_backup_file.stat.exists
+
+# カスタマイズしたmy.cnfの配置
+# 再起動を通知
+- name: MySQL global settings in my.cnf
+  template:
+    src: my.cnf.j2
+    dest: "/etc/my.cnf"
+    owner: root
+    group: root
+    mode: 0644
+  when: not mysql_conf_backup_file.stat.exists
+  notify: restart mysqld
+
+# プロジェクト固有のデータベースを作成
+# - name: "create database [{{ project_db_name }}]"
+#   mysql_db:
+#     name: "{{ project_db_name }}"
+#     state: present
+#     encoding: "{{ project_db_encoding }}"
+
+# # プロジェクト固有のデータベースユーザーを作成
+# - name: "cretae database user [{{ project_db_user_name }}] for database [{{ project_db_name }}]" 
+#   mysql_user:
+#     login_user: root
+#     login_password: "{{ mysql_root_new_password }}"
+#     user: "{{ project_db_user_name }}"
+#     password: "{{ project_db_user_password }}"
+#     host: localhost
+#     priv: "{{ project_db_name }}.*:ALL,GRANT"
+#     state: present

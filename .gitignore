@@ -1,0 +1,4 @@
+ansible.cfg
+hosts
+site.yml
+Vagrantfile

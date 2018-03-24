@@ -1,0 +1,19 @@
+- name: locate .bash_profile
+  template:
+    src: .bash_profile
+    dest: ~/.bash_profile
+    mode: 0644
+  become_user: "{{ working_user }}"
+
+- name: mkdir .bash.d
+  file:
+    path: ~/.bash.d
+    state: directory
+    mode: 0755
+  become_user: "{{ working_user }}"
+
+- name: stop firewalld
+  service:
+    name: firewalld
+    state: stopped
+    enabled: no

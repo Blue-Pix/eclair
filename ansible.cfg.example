@@ -1,0 +1,12 @@
+[defaults]
+inventory = hosts
+retry_files_enabled = False
+ 
+[privilege_escalation]
+become = True
+ 
+[ssh_connection]
+control_path = %(directory)s/%%h-%%r
+ssh_args = -o ControlPersist=15m -F /Users/eclair/.ssh/eclair-config -q
+scp_if_ssh = True
+
