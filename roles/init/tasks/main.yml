@@ -1,4 +1,4 @@
-- name: locate .bash_profile
+- name: deploy .bash_profile
   template:
     src: .bash_profile
     dest: ~/.bash_profile
@@ -12,7 +12,7 @@
     mode: 0755
   become_user: "{{ working_user }}"
 
-- name: stop firewalld
+- name: stop and disable firewalld
   service:
     name: firewalld
     state: stopped

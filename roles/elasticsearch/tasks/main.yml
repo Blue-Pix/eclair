@@ -7,18 +7,18 @@
     - java-1.8.0-openjdk-devel
     - java-1.8.0-openjdk-debuginfo
 
-- name: locate yum repository info 
+- name: deploy yum repository info 
   template:
     src: elasticsearch.repo
     dest: /etc/yum.repos.d/elasticsearch.repo
     mode: 0644
 
-- name: install via yum 
+- name: install 
   yum:
     name: elasticsearch-{{ elasticsearch_version }}
     state: present
 
-- name: check if kuromoji plugin installed
+- name: check if kuromoji plugin already installed
   stat:
     path: /usr/share/elasticsearch/plugins/analysis-kuromoji
   register: kuromoji_check
@@ -30,7 +30,7 @@
     chdir: /usr/share/elasticsearch/bin/
   when: not kuromoji_check.stat.exists
 
-- name: edit config file elasticsearch.yml
+- name: edit  elasticsearch.yml
   lineinfile:
     path: /etc/elasticsearch/elasticsearch.yml
     regexp: "{{ item.regexp }}"
@@ -50,7 +50,7 @@
     - { regexp: "^elasticsearch soft memlock unlimited", line: "elasticsearch soft memlock unlimited" }
     - { regexp: "^elasticsearch hard memlock unlimited", line: "elasticsearch hard memlock unlimited" }
 
-- name: add LimitMEMLOCK option for elasticsearch service
+- name: add LimitMEMLOCK option for elasticsearch.service
   lineinfile:
     path: /usr/lib/systemd/system/elasticsearch.service
     regexp: "^LimitMEMLOCK"
@@ -58,7 +58,7 @@
 
 # default 2g is sometimes too large for low spec server
 # if too large, cannot start elasticsearch.service
-- name: edit config file jvm.options
+- name: edit  jvm.options
   lineinfile:
     path: /etc/elasticsearch/jvm.options
     regexp: "{{ item.regexp }}"

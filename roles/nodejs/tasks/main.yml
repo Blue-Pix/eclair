@@ -1,4 +1,4 @@
-- name: check if nodejs installed
+- name: check if nodejs already installed
   stat:
     path: /usr/local/bin/node
   register: nodejs_bin
@@ -7,7 +7,7 @@
   shell: |
     curl -sL https://rpm.nodesource.com/setup_8.x | bash -
 
-- name: temporary install nodejs using yum
+- name: install latest nodejs temporary
   yum:
     name: "{{ item }}"
     state: present
@@ -15,19 +15,19 @@
     - nodejs
   when: not nodejs_bin.stat.exists
 
-- name: install n using npm
+- name: install n
   npm:
     name: n
     state: present
     global: yes
   when: not nodejs_bin.stat.exists
 
-- name: install nodejs using n
+- name: install version specific nodejs using n
   shell: |
     n {{ nodejs_version }}
   when: not nodejs_bin.stat.exists
 
-- name: refresh shell variables to enable npm
+- name: shell relogin
   shell: |
     exec $SHELL
   when: not nodejs_bin.stat.exists
@@ -40,7 +40,7 @@
   become_user: "{{ working_user }}"
   when: not nodejs_bin.stat.exists
 
-- name: install yarn using npm
+- name: install yarn
   npm:
     name: yarn
     state: present

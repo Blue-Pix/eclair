@@ -1,4 +1,4 @@
-- name: yum install git
+- name: install git and other dependencies
   yum:
     name: "{{ item }}"
     state: latest

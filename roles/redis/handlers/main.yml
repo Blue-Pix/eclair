@@ -1,4 +1,4 @@
-- name: start redis server
+- name: start and enable server
   service:
     name: redis
     state: started

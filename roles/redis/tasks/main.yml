@@ -1,4 +1,4 @@
-- name: check if source exists
+- name: check if source already downloaded
   stat:
     path: /tmp/redis-{{ redis_version }}
   register: redis_source_check
@@ -16,19 +16,19 @@
     target: install
   when: not redis_source_check.stat.exists
 
-- name: check if binary source located
+- name: check if binary source already deployed
   stat:
     path: /usr/local/bin/redis-server
   register: redis_server_bin_check
 
-- name: move binary source
+- name: deploy binary source
   shell: |
     cp redis-server redis-cli redis-sentinel redis-benchmark redis-check-rdb redis-check-aof /usr/local/bin
   args:
     chdir: /tmp/redis-{{ redis_version }}/src
   when: not redis_server_bin_check.stat.exists
 
-- name: check if config file located
+- name: check if config file deployed
   stat:
     path: /etc/redis/{{ redis_port }}.conf
   register: redis_conf_check
@@ -39,7 +39,7 @@
     state: directory
     mode: 0755
 
-- name: move config file
+- name: deploy config file
   shell: |
     mv redis.conf /etc/redis/{{ redis_port }}.conf
   args:
@@ -74,7 +74,7 @@
     createhome: no
     system: yes
 
-- name: make data and log directory
+- name: create data and log directory
   file:
     path: "{{ item }}"
     state: directory
@@ -85,12 +85,12 @@
     - "{{ redis_data_dir }}"
     - "{{ redis_log_dir }}"
 
-- name: check if systemd registered
+- name: check if service already daemonized
   stat:
     path: /etc/systemd/system/redis.service
   register: redis_service_check
 
-- name: register systemd
+- name: daemonize service
   template:
     src: redis.service.j2
     dest: /etc/systemd/system/redis.service

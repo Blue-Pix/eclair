@@ -1,4 +1,4 @@
 elasticsearch_version: 5.6.8
 elasticsearch_port: 9200
-jvm_xms: 1g
-jvm_xmx: 1g
+jvm_xms: 512m
+jvm_xmx: 512m
