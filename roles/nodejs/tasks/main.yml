@@ -6,6 +6,7 @@
 - name: yum node dep resolve
   shell: |
     curl -sL https://rpm.nodesource.com/setup_8.x | bash -
+  when: not nodejs_bin.stat.exists
 
 - name: install latest nodejs temporary
   yum:
@@ -24,7 +25,7 @@
 
 - name: install version specific nodejs using n
   shell: |
-    n {{ nodejs_version }}
+    n {{ __version }}
   when: not nodejs_bin.stat.exists
 
 - name: shell relogin
@@ -37,7 +38,7 @@
     src: 201_nodejs.sh
     dest: ~/.bash.d/201_nodejs.sh
     mode: 0755
-  become_user: "{{ working_user }}"
+  become_user: "{{ __working_user }}"
   when: not nodejs_bin.stat.exists
 
 - name: install yarn
@@ -49,3 +50,4 @@
 - name: yarn install
   shell: |
     yarn install
+  when: not nodejs_bin.stat.exists

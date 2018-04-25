@@ -1,16 +1,16 @@
 # MySQL version settings
-mysql_version: 5.7
-mysql_repo_url: https://dev.mysql.com/get/mysql57-community-release-el7-11.noarch.rpm
-mysql_repo_name: mysql57-community
+__version: 5.7
+__repo_url: https://dev.mysql.com/get/mysql57-community-release-el7-11.noarch.rpm
+__repo_name: mysql57-community
 
 # password settings
-mysql_password_policy: LOW
-mysql_root_new_password:
+__password_policy: LOW
+__root_new_password:
 
 # location of socket file
-socket_path: /tmp/mysql.sock
+__socket_path: /tmp/mysql.sock
 
 # project database settings
-project_db_name: eclair
-project_db_encoding: utf8
+__project_db_name: eclair
+__project_db_encoding: utf8
 

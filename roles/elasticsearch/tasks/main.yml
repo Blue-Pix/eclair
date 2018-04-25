@@ -15,7 +15,7 @@
 
 - name: install 
   yum:
-    name: elasticsearch-{{ elasticsearch_version }}
+    name: elasticsearch-{{ __version }}
     state: present
 
 - name: check if kuromoji plugin already installed
@@ -36,7 +36,7 @@
     regexp: "{{ item.regexp }}"
     line: "{{ item.line }}"
   with_items:
-    - { regexp: "^http.port: ", line: "http.port: {{ elasticsearch_port }}" }
+    - { regexp: "^http.port: ", line: "http.port: {{ __port }}" }
     - { regexp: "^bootstrap.memory_lock: ", line: "bootstrap.memory_lock: true" }
     - { regexp: "^path.logs: ", line: "path.logs: /var/log/elasticsearch" }
     - { regexp: "^network.host: ", line: "network.host: 127.0.0.1" }
@@ -64,6 +64,6 @@
     regexp: "{{ item.regexp }}"
     line: "{{ item.line }}"
   with_items:
-    - { regexp: "^-Xms", line: "-Xms{{ jvm_xms }}" }
-    - { regexp: "^-Xmx", line: "-Xmx{{ jvm_xmx }}" }
+    - { regexp: "^-Xms", line: "-Xms{{ __jvm_xms }}" }
+    - { regexp: "^-Xmx", line: "-Xmx{{ __jvm_xmx }}" }
   notify: start and enable service

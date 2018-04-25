@@ -21,13 +21,13 @@ character-set-server = utf8
 datadir = /var/lib/mysql
 
 # location of socket file
-# socket = {{ socket_path }}
+# socket = {{ __socket_path }}
 
 # allow no password login
 # skip-grant-tables
 
 # password
-#validate_password_policy = {{ mysql_password_policy }}
+#validate_password_policy = {{ __password_policy }}
 default_password_lifetime = 0
 
 # Disabling symbolic-links is recommended to prevent assorted security risks

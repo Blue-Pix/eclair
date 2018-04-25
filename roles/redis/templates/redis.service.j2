@@ -3,8 +3,8 @@ Description=Redis
 
 [Service]
 Type=notify
-ExecStart=/usr/local/bin/redis-server /etc/redis/{{ redis_port }}.conf
-ExecStop=/usr/local/bin/redis-cli -p {{ redis_port }} shutdown
+ExecStart=/usr/local/bin/redis-server /etc/redis/{{ __port }}.conf
+ExecStop=/usr/local/bin/redis-cli -p {{ __port }} shutdown
 User=redis
 Group=redis
 

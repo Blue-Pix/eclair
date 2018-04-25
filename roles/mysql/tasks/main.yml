@@ -16,25 +16,25 @@
 
 - name: install MySQL yum repository
   yum: 
-    name: "{{ mysql_repo_url }}"
+    name: "{{ __repo_url }}"
     state: present
 
 - name: intall yum-utils (MySQL5.6 specific process)
   yum:
     name: yum-utils
     state: present
-  when: mysql_version == 5.6
+  when: __version == 5.6
 
 - name: switch yum repository (MySQL5.6 specific process)
   shell: |
     yum-config-manager --disable mysql57-community
     yum-config-manager --enable mysql56-community
-  when: mysql_version == 5.6
+  when: __version == 5.6
 
-- name: install MySQL{{ mysql_version }}
+- name: install MySQL{{ __version }}
   yum:
     name: "{{ item }}"
-    enablerepo: "{{ mysql_repo_name }}"
+    enablerepo: "{{ __repo_name }}"
     state: present
   with_items:
     - mysql
@@ -63,16 +63,16 @@
 - name: change password policy
   shell: |
     mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "SET GLOBAL validate_password_length=4;"
-    mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "SET GLOBAL validate_password_policy='{{ mysql_password_policy }}';"
+    mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "SET GLOBAL validate_password_policy='{{ __password_policy }}';"
     mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'tmppassw0rd';"
     mysql -u root -p'tmppassw0rd' --connect-expired-password -e "uninstall plugin validate_password;"
   when: not mysql_root_conf_file.stat.exists
 
 - name: change MySQL root user's password
   shell: |
-    mysql -u root -p'tmppassw0rd' --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ mysql_root_new_password }}';"
+    mysql -u root -p'tmppassw0rd' --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ __root_new_password }}';"
   when: not mysql_root_conf_file.stat.exists
-# mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ mysql_root_new_password }}';"
+# mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ __root_new_password }}';"
 
 - name: deploy MySQL root user's .my.cnf
   template:
@@ -102,18 +102,18 @@
   when: not mysql_conf_backup_file.stat.exists
   notify: restart mysqld
 
-# - name: create database [{{ project_db_name }}]
+# - name: create database [{{ __project_db_name }}]
 #   mysql_db:
-#     name: "{{ project_db_name }}"
+#     name: "{{ __project_db_name }}"
 #     state: present
-#     encoding: "{{ project_db_encoding }}"
+#     encoding: "{{ __project_db_encoding }}"
 
-# - name: create MySQL user [{{ project_db_user_name }}] for database [{{ project_db_name }}]
+# - name: create MySQL user [{{ __project_db_user_name }}] for database [{{ __project_db_name }}]
 #   mysql_user:
 #     login_user: root
-#     login_password: "{{ mysql_root_new_password }}"
-#     user: "{{ project_db_user_name }}"
-#     password: "{{ project_db_user_password }}"
+#     login_password: "{{ __root_new_password }}"
+#     user: "{{ __project_db_user_name }}"
+#     password: "{{ __project_db_user_password }}"
 #     host: localhost
-#     priv: "{{ project_db_name }}.*:ALL,GRANT"
+#     priv: "{{ __project_db_name }}.*:ALL,GRANT"
 #     state: present

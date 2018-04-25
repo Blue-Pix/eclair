@@ -13,14 +13,14 @@
   git:
     repo: https://github.com/rbenv/rbenv.git
     dest: ~/.rbenv
-  become_user: "{{ working_user }}"
+  become_user: "{{ __working_user }}"
 
 - name: set global rbenv path
   template:
     src: 001_rbenv.sh
     dest: ~/.bash.d/001_rbenv.sh
     mode: 0755
-  become_user: "{{ working_user }}"
+  become_user: "{{ __working_user }}"
 
 - name: install dependencies for ruby build
   yum: 
@@ -40,38 +40,38 @@
   git:
     repo: https://github.com/sstephenson/ruby-build.git
     dest: ~/.rbenv/plugins/ruby-build
-  become_user: "{{ working_user }}"
+  become_user: "{{ __working_user }}"
 
 - name: check current ruby version
   shell: |
     /bin/bash -lc "ruby -v | grep -oP '^ruby \d{1}.\d{1}.\d{1}' | cut -f 2 -d ' '"
   args:
-    chdir: "{{ app_dir }}"
+    chdir: "{{ __app_dir }}"
   register: current_ruby_version
-  become_user: "{{ working_user }}"
+  become_user: "{{ __working_user }}"
   changed_when: False
 
 - name: shell relogin
   shell: |
     /bin/bash -lc  "source ~/.bash_profile"
-  become_user: "{{ working_user }}"
+  become_user: "{{ __working_user }}"
   when: current_ruby_version.stdout != __version
 
 - name: install ruby
   shell: |
-    /bin/bash -lc "rbenv install {{ ruby_version }}"
+    /bin/bash -lc "rbenv install {{ __version }}"
     /bin/bash -lc "gem install bundler"
     /bin/bash -lc "rbenv rehash"
-    /bin/bash -lc "rbenv local {{ ruby_version }}"
+    /bin/bash -lc "rbenv local {{ __version }}"
   args:
-    chdir: "{{ app_dir }}"
-  become_user: "{{ working_user }}"
+    chdir: "{{ __app_dir }}"
+  become_user: "{{ __working_user }}"
   when: current_ruby_version.stdout != __version
   
 - name: bundle install
   shell: |
     /bin/bash -lc "bundle install"
   args:
-    chdir: "{{ app_dir }}"
-  become_user: "{{ working_user }}"
+    chdir: "{{ __app_dir }}"
+  become_user: "{{ __working_user }}"
   when: current_ruby_version.stdout != __version

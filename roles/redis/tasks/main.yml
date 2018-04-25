@@ -1,18 +1,18 @@
 - name: check if source already downloaded
   stat:
-    path: /tmp/redis-{{ redis_version }}
+    path: /tmp/redis-{{ __version }}
   register: redis_source_check
 
 - name: download and unarchive source
   unarchive:
-    src: http://download.redis.io/releases/redis-{{ redis_version }}.tar.gz
+    src: http://download.redis.io/releases/redis-{{ __version }}.tar.gz
     dest: /tmp
     copy: no
   when: not redis_source_check.stat.exists
 
 - name: make and install
   make:
-    chdir: /tmp/redis-{{ redis_version }}
+    chdir: /tmp/redis-{{ __version }}
     target: install
   when: not redis_source_check.stat.exists
 
@@ -25,12 +25,12 @@
   shell: |
     cp redis-server redis-cli redis-sentinel redis-benchmark redis-check-rdb redis-check-aof /usr/local/bin
   args:
-    chdir: /tmp/redis-{{ redis_version }}/src
+    chdir: /tmp/redis-{{ __version }}/src
   when: not redis_server_bin_check.stat.exists
 
 - name: check if config file deployed
   stat:
-    path: /etc/redis/{{ redis_port }}.conf
+    path: /etc/redis/{{ __port }}.conf
   register: redis_conf_check
 
 - name: make config directory
@@ -41,23 +41,23 @@
 
 - name: deploy config file
   shell: |
-    mv redis.conf /etc/redis/{{ redis_port }}.conf
+    mv redis.conf /etc/redis/{{ __port }}.conf
   args:
-    chdir: /tmp/redis-{{ redis_version }}
+    chdir: /tmp/redis-{{ __version }}
   when: not redis_conf_check.stat.exists
 
 - name: edit config file
   lineinfile:
-    path: /etc/redis/{{ redis_port }}.conf
+    path: /etc/redis/{{ __port }}.conf
     regexp: "{{ item.regexp }}"
     line: "{{ item.line }}"
     state: present
   with_items:
-    - {regexp: "^dir ", line: "dir {{ redis_data_dir }}"}
-    - {regexp: "^logfile ", line: "logfile {{ redis_log_dir }}/{{ redis_port }}.conf"}
-    - {regexp: "^loglevel ", line: "loglevel {{ redis_log_level }}"}
+    - {regexp: "^dir ", line: "dir {{ __data_dir }}"}
+    - {regexp: "^logfile ", line: "logfile {{ __log_dir }}/{{ __port }}.conf"}
+    - {regexp: "^loglevel ", line: "loglevel {{ __log_level }}"}
     - {regexp: "^daemonize ", line: "daemonize yes"}
-    - {regexp: "^port ", line: "port {{ redis_port }}"}
+    - {regexp: "^port ", line: "port {{ __port }}"}
     - {regexp: "^supervised ", line: "supervised systemd"}
 
 - name: create usergroup for redis daemon
@@ -82,8 +82,8 @@
     group: redis
     mode: 0755
   with_items:
-    - "{{ redis_data_dir }}"
-    - "{{ redis_log_dir }}"
+    - "{{ __data_dir }}"
+    - "{{ __log_dir }}"
 
 - name: check if service already daemonized
   stat:
