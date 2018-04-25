@@ -66,4 +66,4 @@
   with_items:
     - { regexp: "^-Xms", line: "-Xms{{ jvm_xms }}" }
     - { regexp: "^-Xmx", line: "-Xmx{{ jvm_xmx }}" }
-  notify: start elasticsearch service
+  notify: start and enable service

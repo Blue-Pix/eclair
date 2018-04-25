@@ -45,6 +45,8 @@
 - name: check current ruby version
   shell: |
     /bin/bash -lc "ruby -v | grep -oP '^ruby \d{1}.\d{1}.\d{1}' | cut -f 2 -d ' '"
+  args:
+    chdir: "{{ app_dir }}"
   register: current_ruby_version
   become_user: "{{ working_user }}"
   changed_when: False
@@ -53,6 +55,7 @@
   shell: |
     /bin/bash -lc  "source ~/.bash_profile"
   become_user: "{{ working_user }}"
+  when: current_ruby_version.stdout != __version
 
 - name: install ruby
   shell: |
@@ -63,7 +66,7 @@
   args:
     chdir: "{{ app_dir }}"
   become_user: "{{ working_user }}"
-  when: current_ruby_version.stdout != ruby_version
+  when: current_ruby_version.stdout != __version
   
 - name: bundle install
   shell: |
@@ -71,3 +74,4 @@
   args:
     chdir: "{{ app_dir }}"
   become_user: "{{ working_user }}"
+  when: current_ruby_version.stdout != __version
