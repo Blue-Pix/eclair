@@ -1,31 +1,31 @@
-- name: check if mariadb already installed
+- name: check if pre-installed mariadb exists
   yum:
-    list=mariadb-libs
-  register: pkg
+    list: mariadb-libs
+  register: mariadb
 
 - name: uninstall pre-installed mariadb
   yum:
     name: mariadb-libs
     state: absent
 
-- name: remove pre-installed mariadb file
+- name: remove pre-installed mariadb's file
   file:
     path: /var/lib/mysql
     state: absent
-  when: pkg.results[0].yumstate == 'installed'
+  when: mariadb.results[0].yumstate == 'installed'
 
-- name: install MySQL yum repository
+- name: add yum repository
   yum: 
     name: "{{ __repo_url }}"
     state: present
 
-- name: intall yum-utils (MySQL5.6 specific process)
+- name: intall yum-utils (for version 5.6)
   yum:
     name: yum-utils
     state: present
   when: __version == 5.6
 
-- name: switch yum repository (MySQL5.6 specific process)
+- name: switch yum repository (for version 5.6)
   shell: |
     yum-config-manager --disable mysql57-community
     yum-config-manager --enable mysql56-community
@@ -43,54 +43,43 @@
     - mysql-utilities
     - MySQL-python
 
-- name: start and enable
+- name: start and enable server
   service:
     name: mysqld
     state: started
     enabled: yes
 
-- name: check if /root/.my.cnf already deployed
+- name: check if my.cnf.bk already deployed
   stat:
-    path: /root/.my.cnf
-  register: mysql_root_conf_file
+    path: "/etc/my.cnf.bk"
+  register: default_my_conf_backup
 
 - name: get default MySQL root users's password
   shell: |
     less /var/log/mysqld.log | grep password | awk '{ print $NF }'
   register: mysql_default_password
-  when: not mysql_root_conf_file.stat.exists
+  when: not default_my_conf_backup.stat.exists
 
 - name: change password policy
   shell: |
-    mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "SET GLOBAL validate_password_length=4;"
+    mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "SET GLOBAL validate_password_length='{{ __password_length }}';"
     mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "SET GLOBAL validate_password_policy='{{ __password_policy }}';"
-    mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'tmppassw0rd';"
-    mysql -u root -p'tmppassw0rd' --connect-expired-password -e "uninstall plugin validate_password;"
-  when: not mysql_root_conf_file.stat.exists
+  when: not default_my_conf_backup.stat.exists and __validate_password
 
-- name: change MySQL root user's password
+- name: disable validate password
   shell: |
-    mysql -u root -p'tmppassw0rd' --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ __root_new_password }}';"
-  when: not mysql_root_conf_file.stat.exists
-# mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ __root_new_password }}';"
+    mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "uninstall plugin validate_password;"
+  when: not default_my_conf_backup.stat.exists and not __validate_password
 
-- name: deploy MySQL root user's .my.cnf
-  template:
-    src: root.my.cnf.j2
-    dest: "/root/.my.cnf"
-    owner: root
-    group: root
-    mode: 0600
-
-- name: check if my.cnf.bk already deployed
-  stat:
-    path: "/etc/my.cnf.bk"
-  register: mysql_conf_backup_file
+- name: change root user password
+  shell: |
+    mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ __root_new_password }}';"
+  when: not default_my_conf_backup.stat.exists
 
 - name: backup default my.cnf
   shell: |
     mv /etc/my.cnf /etc/my.cnf.bk
-  when: not mysql_conf_backup_file.stat.exists
+  when: not default_my_conf_backup.stat.exists
 
 - name: deploy my.cnf
   template:
@@ -99,7 +88,7 @@
     owner: root
     group: root
     mode: 0644
-  when: not mysql_conf_backup_file.stat.exists
+  when: not default_my_conf_backup.stat.exists
   notify: restart mysqld
 
 # - name: create database [{{ __project_db_name }}]

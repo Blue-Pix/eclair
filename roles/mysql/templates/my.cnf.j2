@@ -20,15 +20,20 @@
 character-set-server = utf8
 datadir = /var/lib/mysql
 
+{% if __socket_path != 'default' %}
 # location of socket file
-# socket = {{ __socket_path }}
+socket = {{ __socket_path }}
+{% endif %}
 
 # allow no password login
 # skip-grant-tables
 
 # password
-#validate_password_policy = {{ __password_policy }}
 default_password_lifetime = 0
+{% if __validate_password %}
+validate_password_length={{ __password_length }}
+validate_password_policy={{ __password_policy }}
+{% endif %}
 
 # Disabling symbolic-links is recommended to prevent assorted security risks
 symbolic-links=0
