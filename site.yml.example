@@ -6,3 +6,6 @@
     - nodejs
     - redis
     - elasticsearch
+  vars:
+    __working_user: vagrant
+    __app_dir: ~/eclair
