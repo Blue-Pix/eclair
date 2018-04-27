@@ -29,7 +29,7 @@
   shell: |
     yum-config-manager --disable mysql57-community
     yum-config-manager --enable mysql56-community
-  when: __version == 5.6
+  when: __version == 5.6 and mariadb.results[0].yumstate == 'installed'
 
 - name: install MySQL{{ __version }}
   yum:
