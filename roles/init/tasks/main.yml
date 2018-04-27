@@ -17,3 +17,10 @@
     name: firewalld
     state: stopped
     enabled: no
+
+- name: set LANG={{ __locale }} in /etc/locale.conf
+  lineinfile:
+    dest: /etc/locale.conf
+    regexp: "^LANG="
+    line: "LANG={{ __locale }}"
+    backup: yes
