@@ -1,7 +1,3 @@
-# ※ WIP
-- blank rails app
-- MySQL5.6 5.7 password policy compatibility
-
 # What is eclair
 Infra automation for rails, nodejs, mysql, redis, elasticsearch on vagrant using Ansible
 
@@ -26,7 +22,7 @@ e.g. if you prefer to use Ubuntu, you have to replace `yum` with `apt-get`<br>
 
 1. copy `ansible.cfg.example` as `ansible.cfg` and edit.
 
-specify ssh config file location `/Users/eclair/.ssh/eclair-config`
+change ssh config file location `/Users/eclair/.ssh/eclair-config`
 
 ```
 ssh_args = -o ControlPersist=15m -F /Users/eclair/.ssh/eclair-config -q
@@ -34,16 +30,15 @@ ssh_args = -o ControlPersist=15m -F /Users/eclair/.ssh/eclair-config -q
 
 2. copy `hosts.example` as `hosts` and edit.
 
-specify host group name `eclair_group` and host name `eclair`
+change host name `eclair`
 
 ```
-[eclair_group]
 eclair
 ```
 
 3. copy `site.yml.example` as `site.yml` and edit.
 
-specify host name
+change host name `eclair`
 
 ```
 - hosts: eclair
