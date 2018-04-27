@@ -68,6 +68,7 @@
 
 - name: disable validate password
   shell: |
+    mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ mysql_default_password.stdout }}';"
     mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "uninstall plugin validate_password;"
   when: not default_my_conf_backup.stat.exists and not __validate_password
 
