@@ -42,6 +42,14 @@
     dest: ~/.rbenv/plugins/ruby-build
   become_user: "{{ __working_user }}"
 
+- name: make app directory (if rails new)
+  file:
+    path: "{{ __app_dir }}"
+    state: directory
+    mode: 0755
+  become_user: "{{ __working_user }}"
+  when: __rails_new
+
 - name: check current ruby version
   shell: |
     /bin/bash -lc "ruby -v | grep -oP '^ruby \d{1}.\d{1}.\d{1}' | cut -f 2 -d ' '"
@@ -67,11 +75,45 @@
     chdir: "{{ __app_dir }}"
   become_user: "{{ __working_user }}"
   when: current_ruby_version.stdout != __version
-  
-- name: bundle install
+
+- name: check rails new succeeded
+  stat:
+    path: "{{ __app_dir }}/Gemfile.lock"
+  become_user: "{{ __working_user }}"
+  register: rails_new_gemfile
+  when: __rails_new
+
+- name: init bundler
+  shell: |
+    /bin/bash -lc "bundle init"
+  args:
+    chdir: "{{ __app_dir }}"
+  become_user: "{{ __working_user }}"
+  when: __rails_new and not rails_new_gemfile.stat.exists
+
+- name: gem install rails
+  lineinfile:
+    path: "{{ __app_dir }}/Gemfile"
+    regexp: '# gem "rails"'
+    line: 'gem "rails", "{{ __rails__version }}"'
+  become_user: "{{ __working_user }}"
+  when: __rails_new and not rails_new_gemfile.stat.exists
+
+- name: rails new
+  shell: |
+    /bin/bash -lc "gem install bundler"
+    /bin/bash -lc "rbenv rehash"
+    /bin/bash -lc "bundle install --path vendor/bundle --jobs=4"
+    /bin/bash -lc "bundle exec rails new -f {{ __app_dir }}"
+  args:
+    chdir: "{{ __app_dir }}"
+  become_user: "{{ __working_user }}"
+  when: __rails_new and not rails_new_gemfile.stat.exists
+
+- name: bundle install (if app already exists)
   shell: |
     /bin/bash -lc "bundle install"
   args:
     chdir: "{{ __app_dir }}"
   become_user: "{{ __working_user }}"
-  when: current_ruby_version.stdout != __version
+  when: current_ruby_version.stdout != __version and not __rails_new
