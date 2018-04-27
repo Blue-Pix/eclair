@@ -3,7 +3,7 @@
     path: /usr/local/bin/node
   register: nodejs_bin
 
-- name: yum node dep resolve
+- name: download and setup nodejs source
   shell: |
     curl -sL https://rpm.nodesource.com/setup_8.x | bash -
   when: not nodejs_bin.stat.exists
