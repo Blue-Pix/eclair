@@ -20,11 +20,6 @@
 character-set-server = utf8
 datadir = /var/lib/mysql
 
-{% if __socket_path != 'default' %}
-# location of socket file
-socket = {{ __socket_path }}
-{% endif %}
-
 # allow no password login
 # skip-grant-tables
 
@@ -41,3 +36,12 @@ symbolic-links=0
 # files
 log-error=/var/log/mysqld.log
 pid-file=/var/run/mysqld/mysqld.pid
+
+{% if __socket_path != 'default' %}
+# location of socket file
+socket = {{ __socket_path }}
+
+[client]
+# location of socket file
+socket = {{ __socket_path }}
+{% endif %}

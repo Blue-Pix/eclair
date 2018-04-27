@@ -4,14 +4,13 @@ __repo_url: https://dev.mysql.com/get/mysql57-community-release-el7-11.noarch.rp
 __repo_name: mysql57-community
 
 # password settings
-__validate_password: False 
+__validate_password: True
 __password_length: 8
 __password_policy: LOW
 __root_new_password: rootroot
 
 # location of socket file
-# __socket_path: default 
-__socket_path: /tmp/mysql.sock
+__socket_path: default 
 
 # project database settings
 __project_db_name: eclair
