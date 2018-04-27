@@ -92,18 +92,22 @@
   when: not default_my_conf_backup.stat.exists
   notify: restart mysqld
 
-# - name: create database [{{ __project_db_name }}]
-#   mysql_db:
-#     name: "{{ __project_db_name }}"
-#     state: present
-#     encoding: "{{ __project_db_encoding }}"
+- name: create database [{{ __project_db_name }}]
+  mysql_db:
+    login_user: root
+    login_password: "{{ __root_new_password }}"
+    name: "{{ __project_db_name }}"
+    state: present
+    encoding: "{{ __project_db_encoding }}"
+  when: __project_db_create
 
-# - name: create MySQL user [{{ __project_db_user_name }}] for database [{{ __project_db_name }}]
-#   mysql_user:
-#     login_user: root
-#     login_password: "{{ __root_new_password }}"
-#     user: "{{ __project_db_user_name }}"
-#     password: "{{ __project_db_user_password }}"
-#     host: localhost
-#     priv: "{{ __project_db_name }}.*:ALL,GRANT"
-#     state: present
+- name: create MySQL user [{{ __project_db_user_name }}] for database [{{ __project_db_name }}]
+  mysql_user:
+    login_user: root
+    login_password: "{{ __root_new_password }}"
+    user: "{{ __project_db_user_name }}"
+    password: "{{ __project_db_user_password }}"
+    host: localhost
+    priv: "{{ __project_db_name }}.*:ALL,GRANT"
+    state: present
+  when: __project_db_create

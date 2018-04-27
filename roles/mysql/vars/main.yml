@@ -1,5 +1,5 @@
 # MySQL version settings
-__version: 5.7
+__version: 5.6
 __repo_url: https://dev.mysql.com/get/mysql57-community-release-el7-11.noarch.rpm
 __repo_name: mysql57-community
 
@@ -13,6 +13,8 @@ __root_new_password: rootroot
 __socket_path: default 
 
 # project database settings
+__project_db_create: False
 __project_db_name: eclair
 __project_db_encoding: utf8
-
+__project_db_user_name: eclair
+__project_db_user_password: eclaireclair
