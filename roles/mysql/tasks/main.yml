@@ -19,11 +19,10 @@
     name: "{{ __repo_url }}"
     state: present
 
-- name: intall yum-utils (for version 5.6)
+- name: intall yum-utils
   yum:
     name: yum-utils
     state: present
-  when: __version == 5.6
 
 - name: switch yum repository (for version 5.6)
   shell: |
@@ -31,10 +30,15 @@
     yum-config-manager --enable mysql56-community
   when: __version == 5.6 and mariadb.results[0].yumstate == 'installed'
 
+- name: switch yum repository (for version 5.7)
+  shell: |
+    yum-config-manager --disable mysql56-community
+    yum-config-manager --enable mysql57-community
+  when: __version == 5.7 and mariadb.results[0].yumstate == 'installed'
+
 - name: install MySQL{{ __version }}
   yum:
     name: "{{ item }}"
-    enablerepo: "{{ __repo_name }}"
     state: present
   with_items:
     - mysql
@@ -64,18 +68,23 @@
   shell: |
     mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "SET GLOBAL validate_password_length='{{ __password_length }}';"
     mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "SET GLOBAL validate_password_policy='{{ __password_policy }}';"
-  when: not default_my_conf_backup.stat.exists and __validate_password
+  when: not default_my_conf_backup.stat.exists and __validate_password and __version == 5.7
 
 - name: disable validate password
   shell: |
     mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ mysql_default_password.stdout }}';"
     mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "uninstall plugin validate_password;"
-  when: not default_my_conf_backup.stat.exists and not __validate_password
+  when: not default_my_conf_backup.stat.exists and not __validate_password and __version == 5.7
 
-- name: change root user password
+- name: change root user password (for version 5.6)
+  shell: |
+    /usr/bin/mysqladmin -u root password "{{ __root_new_password }}"
+  when: not default_my_conf_backup.stat.exists and __version == 5.6
+
+- name: change root user password (for version 5.7)
   shell: |
     mysql -u root -p'{{ mysql_default_password.stdout }}' --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ __root_new_password }}';"
-  when: not default_my_conf_backup.stat.exists
+  when: not default_my_conf_backup.stat.exists and __version == 5.7
 
 - name: backup default my.cnf
   shell: |
@@ -84,7 +93,7 @@
 
 - name: deploy my.cnf
   template:
-    src: my.cnf.j2
+    src: "my.cnf_{{ __version }}.j2"
     dest: "/etc/my.cnf"
     owner: root
     group: root
