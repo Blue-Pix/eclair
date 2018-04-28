@@ -28,11 +28,6 @@
     n {{ __version }}
   when: not nodejs_bin.stat.exists
 
-- name: shell relogin
-  shell: |
-    exec $SHELL
-  when: not nodejs_bin.stat.exists
-
 - name: set global npm path
   template:
     src: 201_nodejs.sh
@@ -46,8 +41,3 @@
     name: yarn
     state: present
     global: yes
-
-- name: yarn install
-  shell: |
-    yarn install
-  when: not nodejs_bin.stat.exists
