@@ -1,37 +1,37 @@
 - name: check if source already downloaded
   stat:
     path: /tmp/redis-{{ __version }}
-  register: redis_source_check
+  register: redis_source
 
 - name: download and unarchive source
   unarchive:
     src: http://download.redis.io/releases/redis-{{ __version }}.tar.gz
     dest: /tmp
     copy: no
-  when: not redis_source_check.stat.exists
+  when: not redis_source.stat.exists
 
 - name: make and install
   make:
     chdir: /tmp/redis-{{ __version }}
     target: install
-  when: not redis_source_check.stat.exists
+  when: not redis_source.stat.exists
 
 - name: check if binary source already deployed
   stat:
     path: /usr/local/bin/redis-server
-  register: redis_server_bin_check
+  register: redis_server_bin
 
 - name: deploy binary source
   shell: |
     cp redis-server redis-cli redis-sentinel redis-benchmark redis-check-rdb redis-check-aof /usr/local/bin
   args:
     chdir: /tmp/redis-{{ __version }}/src
-  when: not redis_server_bin_check.stat.exists
+  when: not redis_server_bin.stat.exists
 
 - name: check if config file deployed
   stat:
     path: /etc/redis/{{ __port }}.conf
-  register: redis_conf_check
+  register: redis_conf
 
 - name: make config directory
   file: 
@@ -44,7 +44,7 @@
     mv redis.conf /etc/redis/{{ __port }}.conf
   args:
     chdir: /tmp/redis-{{ __version }}
-  when: not redis_conf_check.stat.exists
+  when: not redis_conf.stat.exists
 
 - name: edit config file
   lineinfile:
@@ -88,7 +88,7 @@
 - name: check if service already daemonized
   stat:
     path: /etc/systemd/system/redis.service
-  register: redis_service_check
+  register: redis_service
 
 - name: daemonize service
   template:
@@ -97,10 +97,10 @@
     owner: root
     group: root
     mode: 0755
-  when: not redis_service_check.stat.exists
+  when: not redis_service.stat.exists
 
 - name: reload daemon
   shell: |
     systemctl daemon-reload
   notify: start and enable server
-  when: not redis_service_check.stat.exists
+  when: not redis_service.stat.exists
